@@ -39,3 +39,8 @@ function astra_child_style()
 /**
  * Your code goes below.
  */
+
+$child_plan  = get_stylesheet_directory() . '/inc/shortcodes/plan.php';
+if (file_exists($child_plan)) {
+	require_once $child_plan;
+} 
