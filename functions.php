@@ -6,6 +6,21 @@
  *
  */
 
+
+add_action('init', function () {
+    if (!session_id()) {
+        session_start();
+    }
+});
+
+add_action('init', function () {
+    if (isset($_POST['selected_plan'])) {
+        $_SESSION['selected_plan'] = json_decode(stripslashes($_POST['selected_plan']), true);
+        wp_safe_redirect(site_url('/add-ons'));
+        exit;
+    }
+});
+
 add_action('wp_enqueue_scripts', 'astra_child_style');
 function astra_child_style()
 {
