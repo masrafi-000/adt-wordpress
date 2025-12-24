@@ -189,7 +189,7 @@ get_header();
             name: "Cloud Storage Pro",
             description: "2TB secure cloud storage",
             price: 29.99,
-            icon: `<svg class="w-8 h-8 text-[#0060AA]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            icon: `<svg class="w-8 h-8 text-[#0060AA]!" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
                 </svg>`
         },
