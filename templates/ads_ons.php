@@ -117,7 +117,7 @@ $plan = $_SESSION['selected_plan'] ?? null;
             </button>
 
 
-            <div id="toggleSection" class=" hidden relative w-full lg:w-[680px] bg-white rounded-3xl shadow-xl border border-slate-100 p-6 md:p-10 transition-all duration-700">
+            <div id="toggleSection" class="relative w-full lg:w-[680px] bg-white rounded-3xl shadow-xl border border-slate-100 p-6 md:p-10" style="opacity:0;transform:translateY(1rem);max-height:0;overflow:hidden;transition:opacity .35s ease, transform .35s ease, max-height .45s ease;">
                 <div>
                     <h3 class="text-2xl font-bold text-slate-900 leading-tight">Enhance Your Security</h3>
                     <p class="text-slate-500 mt-1">Add extra layers of protection to your plan.</p>
@@ -206,145 +206,185 @@ $plan = $_SESSION['selected_plan'] ?? null;
 </section>
 
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-
-        const showAddonsBtn = document.getElementById("showAddonsBtn");
-        const toggle = document.getElementById("toggleSection");
-
-
-        const flag = false;
-
-        showAddonsBtn.addEventListener('click', () => {
-            toggle.classList.toggle("hidden");
-            toggle.classList.add("block");
-        })
-
-    })
-
-
     document.addEventListener('DOMContentLoaded', function() {
         const basePrice = <?php echo $basePrice; ?>;
-        const packageName = "<?php echo $packageName; ?>";
+        const packageName = "<?php echo esc_js($packageName); ?>";
         const showBtn = document.getElementById('showAddonsBtn');
-        const extraSection = document.getElementById('extraSecuritySection');
+        const toggleSection = document.getElementById('toggleSection');
         const totalPriceDisplay = document.getElementById('totalPriceDisplay');
         const packageList = document.getElementById('packageFeatureList');
         const confirmBtn = document.getElementById('confirmBtn');
+        const addonsForm = document.getElementById('addonsPostForm');
+        const adsInput = document.getElementById('ads_data_input');
 
+        // Toggle add-ons panel
+        if (showBtn && toggleSection) {
+            showBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const isOpen = toggleSection.classList.contains('open');
+                if (!isOpen) {
+                    // open: measure and set maxHeight for smooth animation
+                    toggleSection.classList.add('open');
+                    toggleSection.style.display = 'block';
+                    const sh = toggleSection.scrollHeight;
+                    // allow next frame for layout
+                    requestAnimationFrame(() => {
+                        toggleSection.style.maxHeight = sh + 'px';
+                        toggleSection.style.opacity = '1';
+                        toggleSection.style.transform = 'translateY(0)';
+                    });
+                    document.getElementById('btnText').innerText = 'Close Add-ons';
+                    document.getElementById('arrowIcon').classList.add('rotate-180');
+                } else {
+                    // close
+                    toggleSection.style.maxHeight = '0';
+                    toggleSection.style.opacity = '0';
+                    toggleSection.style.transform = 'translateY(1rem)';
+                    toggleSection.classList.remove('open');
+                    document.getElementById('btnText').innerText = 'Add More Items';
+                    document.getElementById('arrowIcon').classList.remove('rotate-180');
+                    // after transition, hide display to remove from flow
+                    setTimeout(() => {
+                        if (!toggleSection.classList.contains('open')) toggleSection.style.display = 'none';
+                    }, 500);
+                }
+            });
+            // keep hidden initially
+            toggleSection.style.display = 'none';
+        }
 
+        // Quantity and selection handling
         document.querySelectorAll('.addon-item-container').forEach(container => {
             const decBtn = container.querySelector('.decrease-btn');
             const incBtn = container.querySelector('.increase-btn');
             const qtyValue = container.querySelector('.qty-value');
             const priceDisplay = container.querySelector('.item-price-display');
             const checkbox = container.querySelector('.addon-checkbox');
-            const originalPrice = parseFloat(checkbox.dataset.price);
+            const originalPrice = checkbox ? parseFloat(checkbox.dataset.price || 0) : 0;
 
-            [decBtn, incBtn].forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                });
-            });
+            // Guard: ensure elements exist
+            if (!qtyValue) return;
 
-            incBtn.addEventListener('click', () => {
-                let val = parseInt(qtyValue.textContent);
-                val++;
-                qtyValue.textContent = val;
-                priceDisplay.textContent = `+$${(originalPrice * val).toFixed(2)}`;
-            });
-
-            decBtn.addEventListener('click', () => {
-                let val = parseInt(qtyValue.textContent);
-                if (val > 1) {
-                    val--;
+            if (incBtn) {
+                incBtn.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    let val = parseInt(qtyValue.textContent) || 1;
+                    val++;
                     qtyValue.textContent = val;
-                    priceDisplay.textContent = `+$${(originalPrice * val).toFixed(2)}`;
-                }
+                    if (priceDisplay) priceDisplay.textContent = `+$${(originalPrice * val).toFixed(2)}`;
+                });
+            }
+
+            if (decBtn) {
+                decBtn.addEventListener('click', (ev) => {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    let val = parseInt(qtyValue.textContent) || 1;
+                    if (val > 1) {
+                        val--;
+                        qtyValue.textContent = val;
+                        if (priceDisplay) priceDisplay.textContent = `+$${(originalPrice * val).toFixed(2)}`;
+                    }
+                });
+            }
+
+            // Clicking the container should toggle the checkbox for accessibility
+            container.addEventListener('click', function(ev) {
+                // ignore clicks originating from qty buttons
+                if (ev.target.closest('.qty-btn')) return;
+                if (checkbox) checkbox.checked = !checkbox.checked;
             });
         });
 
+        // Confirm button: build selection, update UI and submit to server
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', function(e) {
+                e.preventDefault();
 
-        showBtn.addEventListener('click', function() {
-            if (extraSection.classList.contains('hidden')) {
-                extraSection.classList.remove('hidden');
-                setTimeout(() => {
-                    extraSection.style.opacity = '1';
-                    extraSection.style.transform = 'translateY(0)';
-                }, 10);
-                document.getElementById('btnText').innerText = 'Close Add-ons';
-                document.getElementById('arrowIcon').classList.add('rotate-180');
-            } else {
-                extraSection.style.opacity = '0';
-                extraSection.style.transform = 'translateY(1rem)';
-                setTimeout(() => extraSection.classList.add('hidden'), 500);
-                document.getElementById('btnText').innerText = 'Add More Items';
-                document.getElementById('arrowIcon').classList.remove('rotate-180');
-            }
-        });
+                let additionalPrice = 0;
+                const selectedFeatures = [];
+                const addons = [];
 
-
-        confirmBtn.addEventListener('click', function() {
-            let additionalPrice = 0;
-            const selectedFeatures = [];
-
-
-            document.querySelectorAll('#packageFeatureList li span:not(.dynamic-addon span)').forEach(
-                span => {
+                // static features (only non-dynamic li)
+                document.querySelectorAll('#packageFeatureList li:not(.dynamic-addon) span').forEach(span => {
                     selectedFeatures.push(span.innerText.trim());
                 });
 
-            document.querySelectorAll('.dynamic-addon').forEach(el => el.remove());
+                // remove previously appended dynamic addons
+                document.querySelectorAll('.dynamic-addon').forEach(el => el.remove());
 
+                const checkedAddons = document.querySelectorAll('.addon-checkbox:checked');
+                checkedAddons.forEach(addon => {
+                    const container = addon.closest('.addon-item-container');
+                    const qty = parseInt(container.querySelector('.qty-value').textContent) || 1;
+                    const unitPrice = parseFloat(addon.dataset.price) || 0;
+                    const name = addon.dataset.name || '';
 
-            const checkedAddons = document.querySelectorAll('.addon-checkbox:checked');
-            checkedAddons.forEach(addon => {
-                const container = addon.closest('.addon-item-container');
-                const qty = parseInt(container.querySelector('.qty-value').textContent);
-                const unitPrice = parseFloat(addon.dataset.price);
-                const name = addon.dataset.name;
+                    const subTotal = unitPrice * qty;
+                    additionalPrice += subTotal;
 
-                const subTotal = unitPrice * qty;
-                additionalPrice += subTotal;
-
-
-                const li = document.createElement('li');
-                li.className = 'flex items-start dynamic-addon animate-fade-in';
-                li.innerHTML = `
+                    const li = document.createElement('li');
+                    li.className = 'flex items-start dynamic-addon animate-fade-in';
+                    li.innerHTML = `
                     <div class="mt-1 bg-blue-100 rounded-full p-1 text-blue-600 shrink-0">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
                     </div>
                     <span class="ml-3 text-blue-800 font-semibold text-sm md:text-base">${name} <span class="text-blue-500 font-bold">(x${qty})</span></span>
                 `;
-                packageList.appendChild(li);
+                    packageList.appendChild(li);
 
+                    selectedFeatures.push(`${name} (x${qty})`);
+                    addons.push({
+                        id: addon.id || '',
+                        name: name,
+                        qty: qty,
+                        unitPrice: unitPrice,
+                        subTotal: subTotal
+                    });
+                });
 
-                selectedFeatures.push(`${name} (x${qty})`);
+                const finalTotal = (basePrice + additionalPrice).toFixed(2);
+                if (totalPriceDisplay) totalPriceDisplay.innerText = finalTotal;
+
+                const checkoutData = {
+                    packageName: packageName,
+                    totalPrice: `$${finalTotal}`,
+                    features: selectedFeatures,
+                    addons: addons
+                };
+
+                // If server form exists, submit JSON to update PHP session and redirect to checkout
+                if (adsInput && addonsForm) {
+                    try {
+                        adsInput.value = JSON.stringify(checkoutData);
+                        // visual feedback
+                        const originalText = confirmBtn.innerText;
+                        confirmBtn.innerText = 'Updating...';
+                        addonsForm.submit();
+                        return;
+                    } catch (err) {
+                        console.warn('Add-ons submit failed, falling back to localStorage', err);
+                    }
+                }
+
+                // Fallback: store in localStorage and show confirmation
+                try {
+                    localStorage.setItem('securityCheckout', JSON.stringify(checkoutData));
+                } catch (err) {
+                    /* ignore */
+                }
+                window.scrollTo({
+                    top: 100,
+                    behavior: 'smooth'
+                });
+                const originalText = confirmBtn.innerText;
+                confirmBtn.innerText = 'Updated!';
+                setTimeout(() => {
+                    confirmBtn.innerText = originalText;
+                }, 2000);
             });
-
-            const finalTotal = (basePrice + additionalPrice).toFixed(2);
-            totalPriceDisplay.innerText = finalTotal;
-
-
-            const checkoutData = {
-                packageName: packageName,
-                totalPrice: finalTotal,
-                features: selectedFeatures
-            };
-            localStorage.setItem('securityCheckout', JSON.stringify(checkoutData));
-
-
-            window.scrollTo({
-                top: 100,
-                behavior: 'smooth'
-            });
-
-            const originalText = confirmBtn.innerText;
-            confirmBtn.innerText = "Updated!";
-            setTimeout(() => {
-                confirmBtn.innerText = originalText;
-            }, 2000);
-        });
+        }
     });
 </script>
 
