@@ -88,13 +88,16 @@ function plan_section_shortcode()
                                 <?php echo wp_kses_post($plan['price']); ?>
                             </div>
 
-                            <form method="post" action="<?php echo esc_url(site_url('/add-ons')); ?>">
+                              <button class="w-full bg-[#0060AA] border hover:bg-white! hover:border! text-white! hover:text-black! font-bold py-3 px-4 rounded-2xl! transition-all duration-400">
+                             <?php echo esc_html($plan['button']); ?>
+                        </button>
+                            <!-- <form method="post" action="<?php echo esc_url(site_url('/add-ons')); ?>">
                                 <input type="hidden" name="selected_plan" value="<?php echo esc_attr(json_encode($plan)); ?>">
-                                <button type="submit"
-                                    class="w-full bg-[#0060AA] border hover:bg-white! hover:border! text-white! hover:text-black! font-bold py-3 px-4 rounded-2xl! transition-all duration-400">
-                                    <?php echo esc_html($plan['button']); ?>
-                                </button>
-                            </form>
+                                <div type="submit"
+                                    class="w-full! bg-[#0060AA] border hover:bg-white! hover:border! text-white! hover:text-black! font-bold py-3 px-4 rounded-2xl! transition-all duration-400">
+                                   
+                                </div>
+                            </form> -->
                         </div>
                     </div>
 

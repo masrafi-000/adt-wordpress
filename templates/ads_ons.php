@@ -89,13 +89,7 @@ $plan = $_SESSION['selected_plan'] ?? null;
                     </button>
                 </form>
 
-                <!-- <button class="">
-                    <a href="<?php echo home_url('/chack-out'); ?>"
-                        class="text-white! font-bold focus:outline-none! focus:ring-0! focus:border-none!">
-                        Purchase Package
-                    </a>
-                </button> -->
-
+               
 
             </div>
         </div>
